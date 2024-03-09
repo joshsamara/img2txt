@@ -20,10 +20,19 @@ def get_block(r, g, b, *_, **__) -> str:
 
 
 def convert_image(image):
-    image.convert('L')
+
+    # We're dealing with pngs
+    # Overlay to detect transparency
+    image = Image.composite(
+        image,
+        Image.new(
+            'RGB',
+            image.size,
+            (255, 0, 0)
+        ),
+        image
+    )
     width, height = image.size
-
-
 
     # TODO: Fix background parsing
     pixels = []
@@ -53,6 +62,7 @@ if __name__ == '__main__':
         help='the file where the sum should be written')
     args = parser.parse_args()
     assert os.path.exists(args.file)
-    print(convert_image(
-        Image.open(args.file)
-    ))
+
+
+    image = Image.open(args.file)
+    print(convert_image(image))
