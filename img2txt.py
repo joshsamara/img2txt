@@ -12,31 +12,44 @@ BLOCKSET = [
 ]
 
 BLOCK_COUNT = len(BLOCKSET)
+FILL_COLOR = (255, 255, 0)
+BG_COLOR = (255, 255, 255)
 
 def get_block(r, g, b) -> str:
     brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
     index = int(brightness * BLOCK_COUNT) % BLOCK_COUNT
     return BLOCKSET[index]
 
-def draw(pixels: list[list[tuple[int, int, int]]]):
+def serialize(
+    pixels: list[list[tuple[int, int, int] | None]],
+    x_min: int,
+    x_max: int,
+    y_min: int,
+    y_max: int,
+):
     out = ''
     for y, row in enumerate(pixels):
+        y_trim = y < y_min or y > y_max
+        draw_row = False
         for x, pixel in enumerate(row):
-            out += get_block(*pixel)
-        out += '\n'
+            trim = y_trim or x < x_min or x > x_max
+
+            if not trim:
+                block = get_block(*pixel)
+                out += block
+                draw_row = True
+
+        if draw_row:
+            out += '\n'
     return out
 
-FILL_PIXEL = (255, 255, 0)
-RIGHT = (1, 0)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-UP = (0, -1)
+
 def convert_image(image):
     # We're dealing with pngs
     # Overlay to detect transparency
     image = Image.composite(
         image,
-        Image.new('RGB', image.size, FILL_PIXEL),
+        Image.new('RGB', image.size, FILL_COLOR),
         image
     )
     width, height = image.size
@@ -44,45 +57,34 @@ def convert_image(image):
     assert width > 0
     assert height > 0
 
-    pixels: list[list] = [[(0, 0, 0) for _ in range(width)] for _ in range(height)]
+    # Real pixel boundaries
+    x_real_min = width
+    y_real_min = height
+    x_real_max = 0
+    y_real_max = 0
 
-    direction = RIGHT
-    x_min, x_max = (0, width - 1)
-    y_min, y_max = (1, height - 1)
-    position = (0, 0)
-    for _ in range(width * height):
-        x, y, = position
-        v_x, v_y = direction
+    pixels = [[] for _ in range(height)]
+    seen = set()
+    for y in range(height):
+        for x in range(width):
+            seen.add((x, y))
+            color = image.getpixel((x, y))
+            if color == FILL_COLOR:
+                color = BG_COLOR
+            else:
+                x_real_min = min(x_real_min, x)
+                y_real_min = min(y_real_min, y)
+                x_real_max = max(x_real_max, x)
+                y_real_max = max(y_real_max, y)
+            pixels[y].append(color)
 
-        pixels[y][x] = image.getpixel(position)
-
-        position = (x + v_x, y + v_y)
-        new_x, new_y = position
-
-        if direction is RIGHT and new_x == x_max:
-            direction = DOWN
-            x_max -= 1
-        elif direction is DOWN and new_y == y_max:
-            direction = LEFT
-            y_max -= 1
-        elif direction is LEFT and new_x == x_min:
-            direction = UP
-            x_min += 1
-        elif direction is UP and new_y == y_min:
-            direction = RIGHT
-            y_min += 1
-
-        # if turn:
-        #     print(draw(pixels))
-        #     sleep(0.001)
-
-    return draw(pixels)
-    # out = ''
-    # for y, row in enumerate(pixels):
-    #     for x, pixel in enumerate(row): 
-    #         out += get_block(*pixel)
-    #     out += '\n'
-    # return out
+    return serialize(
+        pixels,
+        x_real_min,
+        x_real_max,
+        y_real_min,
+        y_real_max
+    )
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
