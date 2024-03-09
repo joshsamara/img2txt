@@ -13,7 +13,7 @@ BLOCKSET = [
 
 BLOCK_COUNT = len(BLOCKSET)
 FILL_COLOR = (255, 255, 0)
-BG_COLOR = (255, 255, 255)
+BG_COLOR = (0, 0, 0)
 
 def get_block(r, g, b) -> str:
     brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
