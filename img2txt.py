@@ -1,4 +1,3 @@
-from typing import reveal_type
 from PIL import Image
 import os
 import argparse
@@ -13,13 +12,22 @@ BLOCKSET = [
 
 BLOCK_COUNT = len(BLOCKSET)
 
-def get_block(r, g, b, *_, **__) -> str:
+def get_block(r, g, b) -> str:
     brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
     index = int(brightness * BLOCK_COUNT) % BLOCK_COUNT
     return BLOCKSET[index]
 
+def draw(pixels: list[list[tuple[int, int, int]]]):
+    out = ''
+    for y, row in enumerate(pixels):
+        for x, pixel in enumerate(row):
+            out += get_block(*pixel)
+        out += '\n'
+    return out
 
 def convert_image(image):
+
+    FILL_PIXEL = (255, 255, 0)
 
     # We're dealing with pngs
     # Overlay to detect transparency
@@ -28,28 +36,60 @@ def convert_image(image):
         Image.new(
             'RGB',
             image.size,
-            (255, 0, 0)
+            FILL_PIXEL
         ),
         image
     )
     width, height = image.size
 
-    # TODO: Fix background parsing
-    pixels = []
-    for y in range(height):
-        row = []
-        for x in range(width):
-            row.append(
-                image.getpixel((x,y))
-            )
-        pixels.append(row)
+    assert width > 0
+    assert height > 0
 
-    out = ''
-    for y, row in enumerate(pixels):
-        for x, pixel in enumerate(row): 
-            out += get_block(*pixel)
-        out += '\n'
-    return out
+    pixels: list[list] = [[(0, 0, 0) for _ in range(width)] for _ in range(height)]
+    RIGHT = (1, 0)
+    DOWN = (0, 1)
+    LEFT = (-1, 0)
+    UP = (0, -1)
+
+    direction = RIGHT
+
+    x_min, x_max = (0, width - 1)
+    y_min, y_max = (0, height - 1)
+
+    position = (0, 0)
+    for _ in range(width * height):
+        x, y, = position
+        v_x, v_y = direction
+
+        # import time
+        # time.sleep(0.001)
+        pixels[y][x] = image.getpixel(position)
+
+        position = (x + v_x, y + v_y)
+        new_x, new_y = position
+        # last_direction = direction
+        if direction is RIGHT and new_x == x_max:
+            direction = DOWN
+            x_max -= 1
+        elif direction is DOWN and new_y == y_max:
+            direction = LEFT
+            y_max -= 1
+        elif direction is LEFT and new_x == x_min:
+            direction = UP
+            x_min += 1
+        elif direction is UP and new_y == y_min:
+            direction = RIGHT
+            y_min += 1
+        # if last_direction != direction:
+        #     print(draw(pixels))
+
+    return draw(pixels)
+    # out = ''
+    # for y, row in enumerate(pixels):
+    #     for x, pixel in enumerate(row): 
+    #         out += get_block(*pixel)
+    #     out += '\n'
+    # return out
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
