@@ -4,11 +4,11 @@ import os
 import argparse
 
 BLOCKSET = [
-    ' ',
-    '░',
-    '▒',
-    '▓',
-    '█',
+    '  ',
+    '░░',
+    '▒▒',
+    '▓▓',
+    '██',
 ]
 
 BLOCK_COUNT = len(BLOCKSET)
