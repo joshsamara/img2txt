@@ -1,10 +1,10 @@
-from time import sleep
 from PIL import Image
 import os
 import argparse
 
+BG = '  '
 BLOCKSET = [
-    '  ',
+    '・',
     '░░',
     '▒▒',
     '▓▓',
@@ -12,11 +12,16 @@ BLOCKSET = [
 ]
 
 BLOCK_COUNT = len(BLOCKSET)
-FILL_COLOR = (255, 255, 0)
-BG_COLOR = (0, 0, 0)
+FILL_COLOR = (254, 255, 253)
 
+def get_block(
+    pixel: tuple[int, int, int] | None,
+    debug
+) -> str:
+    if pixel is None:
+        return BG
 
-def get_block(r, g, b, debug) -> str:
+    r, g, b = pixel
     brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
     if debug:
         block = str(f"{int(brightness * 100):2}|")
@@ -38,11 +43,11 @@ def serialize(
     for y, row in enumerate(pixels):
         y_trim = y < y_min or y > y_max
         draw_row = False
-        for x, (r, g, b) in enumerate(row):
+        for x, pixel in enumerate(row):
             trim = y_trim or x < x_min or x > x_max
 
             if not trim:
-                block = get_block(r, g, b, debug)
+                block = get_block(pixel, debug)
                 out += block
                 draw_row = True
 
@@ -77,7 +82,7 @@ def convert_image(image, debug: bool):
             seen.add((x, y))
             color = image.getpixel((x, y))
             if color == FILL_COLOR:
-                color = BG_COLOR
+                color = None
             else:
                 x_real_min = min(x_real_min, x)
                 y_real_min = min(y_real_min, y)
@@ -97,9 +102,6 @@ def convert_image(image, debug: bool):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='sum the integers at the command line')
-    # parser.add_argument(
-    #     'integers', metavar='int', nargs='+', type=int,
-    #     help='an integer to be summed')
     parser.add_argument(
         '--file', type=str, 
         help='the file where the sum should be written')
