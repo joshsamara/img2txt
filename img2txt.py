@@ -15,10 +15,16 @@ BLOCK_COUNT = len(BLOCKSET)
 FILL_COLOR = (255, 255, 0)
 BG_COLOR = (0, 0, 0)
 
-def get_block(r, g, b) -> str:
+
+def get_block(r, g, b, debug) -> str:
     brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
-    index = int(brightness * BLOCK_COUNT) % BLOCK_COUNT
-    return BLOCKSET[index]
+    if debug:
+        block = str(f"{int(brightness * 100):2}|")
+    else:
+        index = int(brightness * BLOCK_COUNT) % BLOCK_COUNT
+        block= BLOCKSET[index]
+
+    return block
 
 def serialize(
     pixels: list[list[tuple[int, int, int] | None]],
@@ -26,16 +32,17 @@ def serialize(
     x_max: int,
     y_min: int,
     y_max: int,
+    debug: bool,
 ):
     out = ''
     for y, row in enumerate(pixels):
         y_trim = y < y_min or y > y_max
         draw_row = False
-        for x, pixel in enumerate(row):
+        for x, (r, g, b) in enumerate(row):
             trim = y_trim or x < x_min or x > x_max
 
             if not trim:
-                block = get_block(*pixel)
+                block = get_block(r, g, b, debug)
                 out += block
                 draw_row = True
 
@@ -44,7 +51,7 @@ def serialize(
     return out
 
 
-def convert_image(image):
+def convert_image(image, debug: bool):
     # We're dealing with pngs
     # Overlay to detect transparency
     image = Image.composite(
@@ -83,7 +90,8 @@ def convert_image(image):
         x_real_min,
         x_real_max,
         y_real_min,
-        y_real_max
+        y_real_max,
+        debug,
     )
 
 if __name__ == '__main__':
@@ -95,10 +103,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--file', type=str, 
         help='the file where the sum should be written')
+    parser.add_argument(
+        '--debug', action='store_true', default=False,
+        help='debug')
     args = parser.parse_args()
     assert os.path.exists(args.file)
 
 
     image = Image.open(args.file)
-    result = convert_image(image)
+    result = convert_image(image, args.debug)
     print(result)
