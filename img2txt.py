@@ -4,7 +4,7 @@ import argparse
 
 BG = '  '
 BLOCKSET = [
-    '・',
+    '::',
     '░░',
     '▒▒',
     '▓▓',
@@ -56,7 +56,8 @@ def serialize(
     return out
 
 
-def convert_image(image, debug: bool):
+def convert_image(filepath, debug: bool = False):
+    image = Image.open(filepath).convert('RGBA')
     # We're dealing with pngs
     # Overlay to detect transparency
     image = Image.composite(
@@ -112,6 +113,5 @@ if __name__ == '__main__':
     assert os.path.exists(args.file)
 
 
-    image = Image.open(args.file)
-    result = convert_image(image, args.debug)
+    result = convert_image(args.file, args.debug)
     print(result)
