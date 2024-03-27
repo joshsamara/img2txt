@@ -12,6 +12,8 @@ BLOCKSET = [
 ]
 
 BLOCK_COUNT = len(BLOCKSET)
+
+# Entirely banking on this not conflicting
 FILL_COLOR = (254, 255, 253)
 
 def get_block(
